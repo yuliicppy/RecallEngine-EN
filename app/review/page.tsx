@@ -12,7 +12,9 @@ type ReviewCard = {
 
 export default function ReviewPage() {
   const [cards, setCards] = useState<ReviewCard[]>([]);
-  const [showAnswer, setShowAnswer] = useState(false);
+  const [answer, setAnswer] = useState("");
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const loadDue = async () => {
@@ -31,7 +33,8 @@ export default function ReviewPage() {
     }
     const data = (await res.json()) as ReviewCard[];
     setCards(data);
-    setShowAnswer(false);
+    setAnswer("");
+    setFeedback(null);
   };
 
   useEffect(() => {
@@ -68,6 +71,38 @@ export default function ReviewPage() {
 
   const current = cards[0];
 
+  const checkAnswer = async () => {
+    if (!current || !answer.trim()) return;
+    setChecking(true);
+    setMessage(null);
+    const { data: session } = await supabase.auth.getSession();
+    const token = session.session?.access_token;
+    if (!token) {
+      setMessage("ログインしてください");
+      setChecking(false);
+      return;
+    }
+
+    const res = await fetch("/api/review/feedback", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ cardId: current.id, answer })
+    });
+
+    if (!res.ok) {
+      setMessage("AIチェックに失敗しました");
+      setChecking(false);
+      return;
+    }
+
+    const data = (await res.json()) as { feedback: string };
+    setFeedback(data.feedback || "フィードバックがありません");
+    setChecking(false);
+  };
+
   return (
     <div className="stack">
       <div className="nav">
@@ -83,25 +118,36 @@ export default function ReviewPage() {
 
       {current && (
         <div className="card stack">
-          <div><strong>{current.front}</strong></div>
-          {showAnswer ? <div>{current.back}</div> : <div>答えを見る</div>}
+          <div>日本語: <strong>{current.back}</strong></div>
+          <label>
+            英訳
+            <textarea
+              rows={3}
+              value={answer}
+              onChange={(event) => setAnswer(event.target.value)}
+            />
+          </label>
           <div className="row">
-            {!showAnswer ? (
-              <button className="button" onClick={() => setShowAnswer(true)}>
-                表示
-              </button>
-            ) : (
-              [0, 1, 2, 3, 4, 5].map((rating) => (
-                <button
-                  key={rating}
-                  className="button"
-                  onClick={() => submitRating(rating)}
-                >
-                  {rating}
-                </button>
-              ))
-            )}
+            <button className="button" onClick={checkAnswer} disabled={checking}>
+              AIチェック
+            </button>
           </div>
+          {feedback && (
+            <div className="card">
+              <div>AIフィードバック</div>
+              <div>{feedback}</div>
+            </div>
+          )}
+          {feedback && (
+            <div className="row">
+              <button className="button" onClick={() => submitRating(4)}>
+                正解
+              </button>
+              <button className="button secondary" onClick={() => submitRating(2)}>
+                不正解
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

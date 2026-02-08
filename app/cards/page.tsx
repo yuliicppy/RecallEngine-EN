@@ -15,7 +15,6 @@ type Card = {
 export default function CardsPage() {
   const [cards, setCards] = useState<Card[]>([]);
   const [front, setFront] = useState("");
-  const [back, setBack] = useState("");
   const [notes, setNotes] = useState("");
   const [message, setMessage] = useState<string | null>(null);
 
@@ -55,14 +54,13 @@ export default function CardsPage() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`
       },
-      body: JSON.stringify({ front, back, notes })
+      body: JSON.stringify({ front, notes })
     });
     if (!res.ok) {
       setMessage("カードの作成に失敗しました");
       return;
     }
     setFront("");
-    setBack("");
     setNotes("");
     await loadCards();
   };
@@ -85,14 +83,7 @@ export default function CardsPage() {
             onChange={(event) => setFront(event.target.value)}
           />
         </label>
-        <label>
-          裏（意味・訳）
-          <input
-            className="input"
-            value={back}
-            onChange={(event) => setBack(event.target.value)}
-          />
-        </label>
+        <div>和訳はAIが自動生成します</div>
         <label>
           メモ
           <textarea
