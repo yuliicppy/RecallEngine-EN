@@ -44,9 +44,25 @@
 - **SM-2**を初期の間隔反復アルゴリズムとして採用
 - **単一ユーザー運用**を想定しつつ、**将来の複数ユーザーにも対応できる設計**にする
 
-## ローカル開発（ドラフト）
-1. `.env` に必要な環境変数を設定（`.env.example`参照）
-2. 依存関係をインストールして開発サーバーを起動
+## 実行手順（ローカル）
+1. 依存関係をインストール
+```bash
+npm install
+```
+2. `.env` を作成して環境変数を設定（`.env.example`参照）
+```bash
+cp .env.example .env
+```
+3. Prisma を初期化
+```bash
+npx prisma generate
+npx prisma migrate dev --name init
+```
+4. 開発サーバーを起動
+```bash
+npm run dev
+```
+5. ブラウザで `http://localhost:3000` を開く
 
 ## ライセンス
 MIT
